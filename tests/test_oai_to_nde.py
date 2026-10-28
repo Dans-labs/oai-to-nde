@@ -16,9 +16,15 @@ from oai_to_nde.register_nde_client import (
 class FakeClient:
     """Stands in for NdeDatasetRegisterClient; `behaviour` maps a URL to a list of outcomes, one per call."""
 
-    def __init__(self, behaviour=None):
+    def __init__(self, behaviour=None, domain_allowed=True):
         self.behaviour = behaviour or {}
+        self.domain_allowed = domain_allowed
         self.calls = []
+
+    def is_domain_allowed(self, url):
+        if isinstance(self.domain_allowed, BaseException):
+            raise self.domain_allowed
+        return self.domain_allowed
 
     def __enter__(self):
         return self
@@ -171,6 +177,28 @@ def test_main_oai_only_does_not_register(tmp_path, monkeypatch, capsys):
     run_main(monkeypatch, "--template", "https://x/{id}", "--oai-only", "--data-dir", str(tmp_path), client=client)
     assert (tmp_path / "example.org_urls.txt").read_text() == "https://x/a\nhttps://x/b\n"
     assert client.calls == []
+
+
+def test_main_reports_a_registered_template_domain(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline, "retrieve_identifiers", lambda url, output, **kw: output.write_text("a\n"))
+    run_main(monkeypatch, "--template", "https://x.org/{id}", "--oai-only", "--data-dir", str(tmp_path))
+    assert "Domain x.org is registered" in capsys.readouterr().out
+
+
+def test_main_warns_about_an_unregistered_template_domain(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline, "retrieve_identifiers", lambda url, output, **kw: output.write_text("a\n"))
+    client = FakeClient(domain_allowed=False)
+    run_main(monkeypatch, "--template", "https://x.org/{id}", "--oai-only", "--data-dir", str(tmp_path), client=client)
+    out = capsys.readouterr().out
+    assert "WARNING: domain x.org is not registered" in out
+    assert "only --validate will work" in out
+
+
+def test_main_continues_when_the_domain_check_fails(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(pipeline, "retrieve_identifiers", lambda url, output, **kw: output.write_text("a\n"))
+    client = FakeClient(domain_allowed=NdeRegisterError(0, "down"))
+    run_main(monkeypatch, "--template", "https://x.org/{id}", "--oai-only", "--data-dir", str(tmp_path), client=client)
+    assert "Could not check whether domain x.org is registered" in capsys.readouterr().out
 
 
 def test_main_stops_when_no_identifiers_are_found(tmp_path, monkeypatch, capsys):

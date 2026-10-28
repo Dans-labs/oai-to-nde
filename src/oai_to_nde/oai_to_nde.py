@@ -146,6 +146,28 @@ def write_results(results_file: str | Path, outcomes: dict[str, UrlOutcome], val
     return results_file
 
 
+def check_template_domain(template: str) -> None:
+    """Report whether the template's domain is on the register's allow list; registering needs it, validating does not."""
+    sample_url = template.replace("{id}", "x")
+    domain = urlparse(sample_url).hostname
+    if not domain:
+        print(f"Could not extract a domain from template {template}; skipping the allow list check.")
+        return
+    try:
+        with NdeDatasetRegisterClient() as client:
+            allowed = client.is_domain_allowed(sample_url)
+    except NdeRegisterError as e:
+        print(f"Could not check whether domain {domain} is registered: {_short(str(e))}")
+        return
+    if allowed:
+        print(f"Domain {domain} is registered in the NDE Dataset Register.")
+    else:
+        print(
+            f"WARNING: domain {domain} is not registered in the NDE Dataset Register; "
+            "registering will fail, only --validate will work. Ask NDE to add the domain."
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Harvest OAI-PMH identifiers and register them in the NDE Dataset Register")
     parser.add_argument("oai_url", help="OAI-PMH endpoint")
@@ -161,11 +183,14 @@ def main() -> None:
     parser.add_argument("--retry", type=int, default=0, metavar="N", help="Retry URLs that failed with a connection error or 5xx up to N more times")
     parser.add_argument("--retry-delay", type=float, default=5.0, metavar="SECONDS", help="Seconds to wait before each retry pass (default 5)")
     args = parser.parse_args()
+    
     skip_oai = args.skip_oai or args.urls_file is not None
     if not skip_oai and not args.template:
         parser.error("--template is required unless --skip-oai is given")
     if args.template and "{id}" not in args.template:
         parser.error("--template must contain {id}")
+    if args.template:
+        check_template_domain(args.template)
 
     urls_file = Path(args.urls_file) if args.urls_file else data_path(args.oai_url, "urls.txt", args.oai_set, args.data_dir, args.from_date)
     if skip_oai:
