@@ -10,7 +10,7 @@ A run consists of three steps:
 2. Generate a URL for each identifier from a template.
 3. Register the URLs with the Dataset Register, or only validate them.
 
-The intermediate lists are stored in a data directory (`data/` by default), so a later run can pick up where an earlier one stopped.
+The intermediate lists are stored in a data directory (`work/` by default), so a later run can pick up where an earlier one stopped.
 
 # Requirements
 
@@ -33,7 +33,7 @@ uv run oai-to-nde <oai_url> --template <url_template> [options]
 | `--set` | Only harvest this OAI set. |
 | `--metadata-prefix` | OAI metadata prefix, default `oai_dc`. |
 | `--from` | Only harvest records changed since this date (`YYYY-MM-DD` or UTC datetime). The date becomes part of the file names. |
-| `--data-dir` | Where the identifier and URL lists are stored, default `data`. |
+| `--data-dir` | Where the identifier and URL lists are stored, default `work`. |
 | `--oai-only` | Stop after generating the URL list; nothing is sent to the register. |
 | `--validate` | Validate the URLs against the register instead of registering them. |
 | `--retry N` | Retry URLs that failed with a connection error or a 5xx response up to N more times. Other failures (404, 406) are not retried. |

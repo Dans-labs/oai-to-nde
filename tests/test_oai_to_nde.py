@@ -62,7 +62,7 @@ def write_urls(tmp_path, *urls):
 
 def test_file_names_include_host_set_and_from_date():
     oai = "https://example.org/oai"
-    assert pipeline.data_path(oai, "ids.txt").as_posix() == "data/example.org_ids.txt"
+    assert pipeline.data_path(oai, "ids.txt").as_posix() == "work/example.org_ids.txt"
     assert pipeline.data_path(oai, "urls.txt", "s", "d").as_posix() == "d/example.org_s_urls.txt"
     assert pipeline.data_path(oai, "urls.txt", None, "d", "2026-10-01").as_posix() == "d/example.org_from-2026-10-01_urls.txt"
     assert pipeline.data_path(oai, "retry_t1.txt", "s", "d", "2026-10-01T12:00:00Z").name == "example.org_s_from-2026-10-01T12_00_00Z_retry_t1.txt"

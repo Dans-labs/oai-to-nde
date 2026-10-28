@@ -15,7 +15,7 @@ from oai_to_nde.id_to_url import id_to_url
 from oai_to_nde.oai_pmh import OAIError, retrieve_identifiers
 from oai_to_nde.register_nde_client import NdeDatasetRegisterClient, NdeDomainNotAllowedError, NdeRegisterError
 
-DEFAULT_DATA_DIR = "data"
+DEFAULT_DATA_DIR = "work"
 MAX_DETAIL = 500
 
 

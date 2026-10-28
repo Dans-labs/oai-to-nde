@@ -12,5 +12,7 @@ wheels/
 # Temporary and (meta)data dirs and files
 data/
 data/*
+work/
+work/*
 tmp/
 tmp/*
