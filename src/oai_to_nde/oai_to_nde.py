@@ -173,6 +173,7 @@ def main() -> None:
             parser.error(f"no URL file from an earlier run: {urls_file}")
     else:
         try:
+            print(f"Retrieving identifiers from {args.oai_url} ...")
             ids_file = extract_ids(args.oai_url, args.oai_set, args.data_dir, args.metadata_prefix, args.from_date)
         except OAIError as e:
             sys.exit(f"OAI-PMH error: {e}")
@@ -184,7 +185,10 @@ def main() -> None:
         if ids_file.stat().st_size == 0:
             print("No identifiers found; nothing to register.")
             return
+        print("Done retrieving identifiers.")
+        print(f"Generating URLs using template: {args.template} ...")
         generate_urls(ids_file, urls_file, args.template)
+        print("Done generating URLs.")
     print(f"URLs: {urls_file}")
     if args.oai_only:
         return
@@ -194,24 +198,30 @@ def main() -> None:
     stop = None
     with NdeDatasetRegisterClient() as client:
         try:
+            print(f"Registering or validating URLs from {urls_file} ...")
             register_urls(urls_file, client, validate_only=args.validate, retries=args.retry, retry_delay=args.retry_delay, outcomes=outcomes)
         except NdeDomainNotAllowedError:
             stop = "Error: the domain of the URLs is not on the register's allow list; ask NDE to add it."
         except KeyboardInterrupt:
             stop = "Interrupted; the results so far were saved."
+        print("Done registering or validating URLs.")
 
     # Save before reporting, so an interrupted or aborted run keeps what it has.
+    results_file_name = f"results_{stamp}.csv"
+    print(f"Writing results to file {results_file_name} ...")
     results_file = write_results(
-        data_path(args.oai_url, f"results_{stamp}.csv", args.oai_set, args.data_dir, args.from_date),
+        data_path(args.oai_url, results_file_name, args.oai_set, args.data_dir, args.from_date),
         outcomes,
         validate_only=args.validate,
     )
     retry_urls = [url for url, o in outcomes.items() if o.retryable]
     retry_file = None
     if retry_urls:
-        retry_file = data_path(args.oai_url, f"retry_{stamp}.txt", args.oai_set, args.data_dir, args.from_date)
+        retry_file_name = f"retry_{stamp}.txt"
+        print(f"Writing retry URLs to file {retry_file_name} ...")
+        retry_file = data_path(args.oai_url, retry_file_name, args.oai_set, args.data_dir, args.from_date)
         retry_file.write_text("".join(f"{url}\n" for url in retry_urls), encoding="utf-8")
-
+        print("Done writing retry URLs.")
     result = summarize(outcomes)
     ok = "Valid" if args.validate else "Accepted"
     summary = f"{ok}: {len(result['accepted'])}, invalid: {len(result['invalid'])}, failed: {len(result['failed'])}"
