@@ -1,0 +1,26 @@
+[project]
+name = "oai-to-nde"
+version = "0.1.0"
+description = "Use OAI-PMH to retrieve Dataset URL's which are then registered in the NDE Dataset Register"
+readme = "README.md"
+authors = [
+    { name = "paulboon", email = "paul.boon@dans.knaw.nl" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+oai-to-nde = "oai_to_nde.oai_to_nde:main"
+id-to-url = "oai_to_nde.id_to_url:main"
+oai-get-ids = "oai_to_nde.oai_pmh:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
